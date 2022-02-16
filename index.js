@@ -45,9 +45,9 @@
 
       handleSubmit: function handleSubmit(e) {
         e.preventDefault();
-        console.log('submit');
         var $tableCar = $('[data-js="table-car"]').get();
         $tableCar.appendChild(app.createNewCar());
+        $('[data-js="delete-button"]').on('click', app.removeCarEntry);
       },
 
       createNewCar: function createNewCar() {
@@ -59,6 +59,7 @@
         var $tdYear = document.createElement('td');
         var $tdPlate = document.createElement('td');
         var $tdColor = document.createElement('td');
+        var $tdRemoveButton = document.createElement('td');
 
         $image.setAttribute('src', $('[data-js="image"]').get().value);
         $tdImage.appendChild($image);
@@ -68,13 +69,23 @@
         $tdPlate.textContent = $('[data-js="plate"]').get().value;
         $tdColor.textContent = $('[data-js="color"]').get().value;
 
+        const $deleteButton = app.createButton('Remover');
+        $deleteButton.addEventListener('click', () => app.removeTableEntry($tr), false);
+        var $removeButton = $tdRemoveButton.appendChild($deleteButton);
+
         $tr.appendChild($tdImage);
         $tr.appendChild($tdBrand);
         $tr.appendChild($tdYear);
         $tr.appendChild($tdPlate);
         $tr.appendChild($tdColor);
+        $tr.appendChild($removeButton);
 
         return $fragment.appendChild($tr);
+      },
+
+      removeCarEntry: function removeCarEntry(event) {
+        const pos = this.getAttribute('data-delete');
+        $(`[data-position="${pos}"]`).get().outerHTML = '';
       },
 
       companyInfo: function companyInfo() {
@@ -96,10 +107,30 @@
 
       isReady: function isReady() {
         return this.readyState === 4 & this.status === 200;
-      }
+      },
+
+      createButton: function createButton(text) {
+        const $button = document.createElement('button');
+        const $buttonText = document.createTextNode(text);
+        $button.appendChild($buttonText);
+
+        return $button;
+      },
+
+      removeTableEntry: function removeTableEntry(tr) {
+        tr.remove();
+      },
+
     };
   })();
 
   app.init();
 
 })(window.DOM);
+
+
+//let newButton = document.createElement('button');
+//newButton.innerHTML = 'Deletar';
+//newButton.className = 'delete-button';
+//newButton.id = 0;
+//newButton.addEventListener('click', removeCarEntry);
