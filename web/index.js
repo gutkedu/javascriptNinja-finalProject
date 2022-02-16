@@ -32,6 +32,9 @@
   */
 
   var app = (function () {
+
+    var ajax = new XMLHttpRequest();
+
     return {
       init: function () {
         console.log('app init');
@@ -45,9 +48,73 @@
 
       handleSubmit: function handleSubmit(e) {
         e.preventDefault();
-        var $tableCar = $('[data-js="table-car"]').get();
-        $tableCar.appendChild(app.createNewCar());
+        //var $tableCar = $('[data-js="table-car"]').get();
+        //$tableCar.appendChild(app.createNewCar());
+        app.createNewCarInServer();
+        //app.handleCleanInputs();
         $('[data-js="delete-button"]').on('click', app.removeCarEntry);
+      },
+
+      carsInfo: function carsInfo() {
+        const ajaxCars = new XMLHttpRequest();
+        ajaxCars.open('GET', 'http://localhost:3000/cars');
+        ajaxCars.send();
+        ajaxCars.addEventListener('readystatechange', this.getCarsInfo, false);
+      },
+
+      getCarsInfo: function getCarsInfo() {
+        if (!app.isReady.call(this))
+          return;
+        const response_cars = JSON.parse(ajaxCars.responseText);
+
+        var $tableCar = $('[data-js="table-car"]').get();
+
+        response_cars.map((item, index) => {
+          $tableCar.innerHTML += `
+          <tr id=${index}>
+            <td> ${item.dateCreation}</td>
+            <td> <img src=${item.image}/></td>
+            <td> ${item.brandModel}</td>
+            <td> ${item.year}</td>
+            <td> ${item.plate}</td>-
+            <td> ${item.color}</td>
+          </tr>
+          `
+        });
+      },
+
+      createNewCarInServer: function createNewCarInServer() {
+        ajax.open('POST', 'http://localhost:3000/cars');
+        ajax.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+
+        var img = $('[data-js="image"]').get();
+        var brandModel = $('[data-js="brand-model"]').get();
+        var year = $('[data-js="year"]').get();
+        var plate = $('[data-js="plate"]').get();
+        var color = $('[data-js="color"]').get();
+
+        if (!img || !brandModel || !year || !plate || !color) {
+          return alert('Preencha todos os campos');
+        }
+
+        var data = JSON.stringify({
+          img,
+          brandModel,
+          year,
+          plate,
+          color,
+        });
+
+        ajax.send(data);
+        ajax.addEventListener('readystatechange', this.carsInfo(), false);
+
+      },
+
+      carsInfo: function carsInfo() {
+        var ajax = new XMLHttpRequest();
+        ajax.open('GET', 'http://localhost:3000/cars', true);
+        ajax.send();
+        ajax.addEventListener('readystatechange', this.getCarInfo, false);
       },
 
       createNewCar: function createNewCar() {
@@ -113,12 +180,25 @@
         const $button = document.createElement('button');
         const $buttonText = document.createTextNode(text);
         $button.appendChild($buttonText);
-
         return $button;
       },
 
       removeTableEntry: function removeTableEntry(tr) {
         tr.remove();
+      },
+
+      handleCleanInputs: function handleCleanInputs() {
+        var inputImage = DOM('[data-js="image"]').get();
+        var model = DOM('[data-js="brand-model"]').get();
+        var year = DOM('[data-js="year"]').get();
+        var plate = DOM('[data-js="plate"]').get();
+        var color = DOM('[data-js="color"]').get();
+
+        inputImage.value = '';
+        model.value = '';
+        year.value = '';
+        plate.value = '';
+        color.value = '';
       },
 
     };
@@ -127,10 +207,3 @@
   app.init();
 
 })(window.DOM);
-
-
-//let newButton = document.createElement('button');
-//newButton.innerHTML = 'Deletar';
-//newButton.className = 'delete-button';
-//newButton.id = 0;
-//newButton.addEventListener('click', removeCarEntry);
