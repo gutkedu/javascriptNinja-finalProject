@@ -6,7 +6,7 @@ const port = 3000;
 app.use(express.json());
 app.use(cors());
 
-const cars = [
+let cars = [
   {
     img:
       'https://i0.wp.com/thegarage.com.br/wp-content/uploads/2020/09/1969-volkswagen-fusca-original.jpg?fit=1500%2C1000&ssl=1',
@@ -38,14 +38,14 @@ app.post('/cars', function (req, res) {
     plate: plate,
     color: color
   });
-  res.json({ message: 'success' });
+  res.status(200);
 });
 
-app.delete('/cars/:plate', function (req, res) {
-  const { plate } = req.params;
-  const carIndex = cars.findIndex((car) => car.plate === plate);
-  cars.splice(carIndex, 1);
-  return res.status(204);
+app.delete('/cars', function (req, res) {
+   cars = cars.filter(function (car) {
+    return car.plate !== req.body.plate;
+  });
+  res.status(200);
 });
 
 app.listen(port);
