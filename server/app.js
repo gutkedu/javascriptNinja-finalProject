@@ -3,8 +3,8 @@ const cors = require('cors');
 const app = express();
 const port = 3000;
 
-app.use(cors());
 app.use(express.json());
+app.use(cors());
 
 const cars = [
   {
@@ -30,13 +30,20 @@ app.get('/cars', function (req, res) {
 });
 
 app.post('/cars', function (req, res) {
-  const newCar = req.body;
-  cars.push(newCar);
+  const { img, brandModel, year, plate, color } = req.body;
+  cars.push({
+    img: img,
+    brandModel: brandModel,
+    year: year,
+    plate: plate,
+    color: color
+  });
+  res.json({ message: 'success' });
 });
 
 app.delete('/cars/:plate', function (req, res) {
   const { plate } = req.params;
-  const carIndex = cars.findIndex((car) => car.licensePlate === plate);
+  const carIndex = cars.findIndex((car) => car.plate === plate);
   cars.splice(carIndex, 1);
   return res.status(204);
 });

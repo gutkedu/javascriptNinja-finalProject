@@ -35,6 +35,8 @@
 
     var ajax = new XMLHttpRequest();
 
+    let car = new Array();
+
     return {
       init: function () {
         console.log('app init');
@@ -44,22 +46,12 @@
 
       initEvents: function initEvents() {
         $('[data-js="form-register"]').on('submit', this.handleSubmit);
+        app.getCarInServer();
       },
 
       handleSubmit: function handleSubmit(e) {
         e.preventDefault();
-        //var $tableCar = $('[data-js="table-car"]').get();
-        //$tableCar.appendChild(app.createNewCar());
-        app.createNewCarInServer();
-        //app.handleCleanInputs();
-        $('[data-js="delete-button"]').on('click', app.removeCarEntry);
-      },
-
-      carsInfo: function carsInfo() {
-        const ajaxCars = new XMLHttpRequest();
-        ajaxCars.open('GET', 'http://localhost:3000/cars');
-        ajaxCars.send();
-        ajaxCars.addEventListener('readystatechange', this.getCarsInfo, false);
+        app.newCarEntry();
       },
 
       getCarsInfo: function getCarsInfo() {
@@ -83,41 +75,37 @@
         });
       },
 
-      createNewCarInServer: function createNewCarInServer() {
-        ajax.open('POST', 'http://localhost:3000/cars');
-        ajax.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+      newCarEntry: function newCarEntry() {
+        var $tr = document.createElement('tr');
+        var $tdImage = document.createElement('td');
+        var $image = document.createElement('img');
+        var $tdBrand = document.createElement('td');
+        var $tdYear = document.createElement('td');
+        var $tdPlate = document.createElement('td');
+        var $tdColor = document.createElement('td');
+        var $tdRemoveButton = document.createElement('td');
 
-        var img = $('[data-js="image"]').get();
-        var brandModel = $('[data-js="brand-model"]').get();
-        var year = $('[data-js="year"]').get();
-        var plate = $('[data-js="plate"]').get();
-        var color = $('[data-js="color"]').get();
+        $image.src = new $('[data-js="image"]').get();
+        $tdBrand.textContent = new $('[data-js="brand-model"]').get();
+        $tdYear.textContent = new $('[data-js="year"]').get();
+        $tdPlate.textContent = new $('[data-js="plate"]').get();
+        $tdColor.textContent = new $('[data-js="color"]').get();
 
-        if (!img || !brandModel || !year || !plate || !color) {
-          return alert('Preencha todos os campos');
+        const $deleteButton = app.createButton('Remover');
+        $deleteButton.addEventListener('click', () => app.removeTableEntry($tr), false);
+        var $removeButton = $tdRemoveButton.appendChild($deleteButton);
+
+        try {
+          app.createNewCarInServer($image.src, $tdBrand.textContent, $tdYear.textContent
+            , $tdPlate.textContent, $tdColor.textContent);
         }
-
-        var data = JSON.stringify({
-          img,
-          brandModel,
-          year,
-          plate,
-          color,
-        });
-
-        ajax.send(data);
-        ajax.addEventListener('readystatechange', this.carsInfo(), false);
-
+        catch {
+          return;
+        }
       },
 
-      carsInfo: function carsInfo() {
-        var ajax = new XMLHttpRequest();
-        ajax.open('GET', 'http://localhost:3000/cars', true);
-        ajax.send();
-        ajax.addEventListener('readystatechange', this.getCarInfo, false);
-      },
-
-      createNewCar: function createNewCar() {
+      addCarOnTable: function addCarOnTable(car) {
+        var $tableCar = $('[data-js="table-car"]').get();
         var $fragment = document.createDocumentFragment();
         var $tr = document.createElement('tr');
         var $tdImage = document.createElement('td');
@@ -128,26 +116,42 @@
         var $tdColor = document.createElement('td');
         var $tdRemoveButton = document.createElement('td');
 
-        $image.setAttribute('src', $('[data-js="image"]').get().value);
-        $tdImage.appendChild($image);
-
-        $tdBrand.textContent = $('[data-js="brand-model"]').get().value;
-        $tdYear.textContent = $('[data-js="year"]').get().value;
-        $tdPlate.textContent = $('[data-js="plate"]').get().value;
-        $tdColor.textContent = $('[data-js="color"]').get().value;
+        $image.src = car.img;
+        $tdBrand.textContent = car.brandModel;
+        $tdYear.textContent = car.year;
+        $tdPlate.textContent = car.plate;
+        $tdColor.textContent = car.color;
 
         const $deleteButton = app.createButton('Remover');
         $deleteButton.addEventListener('click', () => app.removeTableEntry($tr), false);
         var $removeButton = $tdRemoveButton.appendChild($deleteButton);
 
-        $tr.appendChild($tdImage);
-        $tr.appendChild($tdBrand);
-        $tr.appendChild($tdYear);
-        $tr.appendChild($tdPlate);
-        $tr.appendChild($tdColor);
-        $tr.appendChild($removeButton);
+        app.createTable($tdImage, $image);
+        app.createTable($tr, $tdImage, $tdBrand, $tdYear, $tdPlate, $tdColor, $removeButton);
+        app.createTable($fragment, $tr);
+        app.createTable($tableCar, $fragment);
 
-        return $fragment.appendChild($tr);
+      },
+
+      createTable: function createTable(parentElement) {
+        for (let elements of arguments) {
+          if (elements !== parentElement) parentElement.appendChild(elements);
+        }
+      },
+
+      createNewCarInServer: function createNewCarInServer(img, brandModel, year, plate, color) {
+        ajax.open('POST', 'http://localhost:3000/cars');
+        ajax.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+
+        var carData = JSON.stringify({
+          img,
+          brandModel,
+          year,
+          plate,
+          color,
+        });
+
+        ajax.send(carData);
       },
 
       removeCarEntry: function removeCarEntry(event) {
@@ -155,11 +159,28 @@
         $(`[data-position="${pos}"]`).get().outerHTML = '';
       },
 
+      getCarInServer: function getCarInServer() {
+        ajax.open('GET', 'http://localhost:3000/cars')
+        ajax.send();
+        ajax.addEventListener('readystatechange', function () {
+          if (app.isReady.call(this)) {
+            let response = JSON.parse(ajax.responseText);
+            response.map((carsServer) => {
+              car.push(carsServer);
+            });
+
+            car.forEach((carElement) => {
+              app.addCarOnTable(carElement);
+            });
+
+          }
+        }, false);
+      },
+
       companyInfo: function companyInfo() {
-        var ajax = new XMLHttpRequest();
         ajax.open('GET', './company.json', true);
         ajax.send();
-        ajax.addEventListener('readystatechange', this.getCompanyInfo, false);
+        ajax.addEventListener('readystatechange', app.getCompanyInfo, false);
       },
 
       getCompanyInfo: function getCompanyInfo() {
@@ -185,20 +206,6 @@
 
       removeTableEntry: function removeTableEntry(tr) {
         tr.remove();
-      },
-
-      handleCleanInputs: function handleCleanInputs() {
-        var inputImage = DOM('[data-js="image"]').get();
-        var model = DOM('[data-js="brand-model"]').get();
-        var year = DOM('[data-js="year"]').get();
-        var plate = DOM('[data-js="plate"]').get();
-        var color = DOM('[data-js="color"]').get();
-
-        inputImage.value = '';
-        model.value = '';
-        year.value = '';
-        plate.value = '';
-        color.value = '';
       },
 
     };
